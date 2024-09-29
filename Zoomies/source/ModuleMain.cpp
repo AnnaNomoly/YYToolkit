@@ -189,7 +189,7 @@ void CreateHookGmlScriptGetMoveSpeed(AurieStatus& status)
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTRED, "[Telepop] - Failed to get script (gml_Script_get_move_speed@Ari@Ari)!");
+		g_ModuleInterface->Print(CM_LIGHTRED, "[Zoomies] - Failed to get script (gml_Script_get_move_speed@Ari@Ari)!");
 	}
 
 	status = MmCreateHook(
@@ -202,7 +202,7 @@ void CreateHookGmlScriptGetMoveSpeed(AurieStatus& status)
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTRED, "[Telepop] - Failed to hook script (gml_Script_get_move_speed@Ari@Ari)!");
+		g_ModuleInterface->Print(CM_LIGHTRED, "[Zoomies] - Failed to hook script (gml_Script_get_move_speed@Ari@Ari)!");
 	}
 }
 
@@ -223,7 +223,7 @@ EXPORTED AurieStatus ModuleInitialize(
 	if (!AurieSuccess(status))
 		return AURIE_MODULE_DEPENDENCY_NOT_RESOLVED;
 
-	g_ModuleInterface->Print(CM_LIGHTYELLOW, "[Telepop] - Plugin starting...");
+	g_ModuleInterface->Print(CM_LIGHTYELLOW, "[Zoomies] - Plugin starting...");
 	
 	g_ModuleInterface->CreateCallback(
 		g_ArSelfModule,
@@ -235,10 +235,10 @@ EXPORTED AurieStatus ModuleInitialize(
 	CreateHookGmlScriptGetMoveSpeed(status);
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTRED, "[Telepop] - Exiting due to failure on start!");
+		g_ModuleInterface->Print(CM_LIGHTRED, "[Zoomies] - Exiting due to failure on start!");
 		return status;
 	}
 
-	g_ModuleInterface->Print(CM_LIGHTGREEN, "[Telepop] - Plugin started!");
+	g_ModuleInterface->Print(CM_LIGHTGREEN, "[Zoomies] - Plugin started!");
 	return AURIE_SUCCESS;
 }
