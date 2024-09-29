@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{755a11f6-04b7-4e0d-b321-6f567f4769be}</ProjectGuid>
-    <RootNamespace>ExamplePlugin</RootNamespace>
+    <ProjectGuid>{4aeb7505-187e-4cc6-9bb0-a59eb42074ad}</ProjectGuid>
+    <RootNamespace>Telepop</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

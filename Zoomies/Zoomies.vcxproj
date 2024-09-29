@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{755a11f6-04b7-4e0d-b321-6f567f4769be}</ProjectGuid>
-    <RootNamespace>ExamplePlugin</RootNamespace>
+    <ProjectGuid>{a8486853-6491-4bdf-9f90-b5e0d9e85a31}</ProjectGuid>
+    <RootNamespace>Zoomies</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

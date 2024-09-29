@@ -9,7 +9,7 @@ void FrameCallback(FWFrame& FrameContext)
 	UNREFERENCED_PARAMETER(FrameContext);
 
 	static uint32_t frame_counter = 0;
-	
+
 	if (frame_counter % 30 == 0)
 		g_ModuleInterface->PrintWarning("[Example Plugin] - 30 frames have passed! Framecount: %u", frame_counter);
 
@@ -24,11 +24,11 @@ EXPORTED AurieStatus ModuleInitialize(
 	UNREFERENCED_PARAMETER(ModulePath);
 
 	AurieStatus last_status = AURIE_SUCCESS;
-	
+
 	// Gets a handle to the interface exposed by YYTK
 	// You can keep this pointer for future use, as it will not change unless YYTK is unloaded.
 	last_status = ObGetInterface(
-		"YYTK_Main", 
+		"YYTK_Main",
 		(AurieInterfaceBase*&)(g_ModuleInterface)
 	);
 
@@ -37,7 +37,7 @@ EXPORTED AurieStatus ModuleInitialize(
 		return AURIE_MODULE_DEPENDENCY_NOT_RESOLVED;
 
 	g_ModuleInterface->Print(CM_LIGHTGREEN, "[Example Plugin] - Hello from PluginEntry!");
-	
+
 	last_status = g_ModuleInterface->CreateCallback(
 		Module,
 		EVENT_FRAME,
