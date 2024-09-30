@@ -4,6 +4,11 @@
 using namespace Aurie;
 using namespace YYTK;
 
+static const int SIX_AM_IN_SECONDS = 21600;
+static const int THIRY_MINUTES_IN_SECONDS = 1800;
+static const int HUNGER_LOST_PER_TICK = -1;
+static const int HEALTH_LOST_PER_TICK = -10;
+
 static YYTKInterface* g_ModuleInterface = nullptr;
 static int ari_hunger_value = 5;
 static bool ari_is_hungry = false;
@@ -12,9 +17,11 @@ static int time_of_last_tick = 0; // TODO: Set this on file load.
 static int held_item_id = -1;
 static std::string held_item_name;
 static bool game_is_active = false;
-
+static bool health_bar_visible = false;
 static bool use_health_instead_of_stamina = false;
-static int hunger_stamina_health_penatly = 1;
+static int hunger_stamina_health_penatly = 0;
+
+static int font = 0; // DEBUG
 
 static std::map<std::string, int> item_name_to_stars_map = {
 	// Forage
@@ -245,60 +252,93 @@ void ObjectCallback(
 	if (!strstr(self->m_Object->m_Name, "obj_ari"))
 		return;
 
-	//--------------------------------------------------------
-	// TODO: Move this to its own function.
 	CInstance* global_instance = nullptr;
 	g_ModuleInterface->GetGlobalInstance(&global_instance);
 
-	CScript* script_object = nullptr;
-	g_ModuleInterface->GetNamedRoutinePointer(
-		"gml_Script_modify_health@Ari@Ari",
-		(PVOID*)&script_object
-	);
+	// Handle health penalties (when Ari is hungry).
+	if (is_tracked_time_interval || use_health_instead_of_stamina) {
+		CScript* gml_script_modify_health = nullptr;
+		g_ModuleInterface->GetNamedRoutinePointer(
+			"gml_Script_modify_health@Ari@Ari",
+			(PVOID*)&gml_script_modify_health
+		);
 
-	RValue* health_penalty = new RValue(-5.0);
-	if (is_tracked_time_interval) {
-		is_tracked_time_interval = false;
-		if (ari_is_hungry) {
+		// Time tick when Ari is hungry.
+		if (is_tracked_time_interval && ari_is_hungry) {
+			g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Hunger meter depleted! Decreased health by %d!", HEALTH_LOST_PER_TICK);
+
 			RValue result;
-			script_object->m_Functions->m_ScriptFunction(
+			RValue* health_penalty = new RValue(HEALTH_LOST_PER_TICK);
+			
+			gml_script_modify_health->m_Functions->m_ScriptFunction(
 				global_instance->at("__ari").m_Object,
 				self,
 				result,
 				1,
 				{ &health_penalty }
 			);
-		}
-	}
-	delete health_penalty;
-
-	//--------------------------------------------------------
-
-	if (use_health_instead_of_stamina) {
-		use_health_instead_of_stamina = false;
-
-		global_instance = nullptr;
-		g_ModuleInterface->GetGlobalInstance(&global_instance);
-
-		script_object = nullptr;
-		g_ModuleInterface->GetNamedRoutinePointer(
-			"gml_Script_modify_health@Ari@Ari",
-			(PVOID*)&script_object
-		);
-
-		health_penalty = new RValue(-5.0);
-		RValue result;
-		script_object->m_Functions->m_ScriptFunction(
-			global_instance->at("__ari").m_Object,
-			self,
-			result,
-			1,
-			{ &health_penalty }
-		);
 			
-		delete health_penalty;
+			delete health_penalty;
+		}
+
+		// Stamina used when Ari is hungry.
+		if (use_health_instead_of_stamina) {
+			g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Hunger meter depleted! Decreased health by %d!", hunger_stamina_health_penatly);
+
+			RValue* health_penalty = new RValue(hunger_stamina_health_penatly);
+			RValue result;
+			gml_script_modify_health->m_Functions->m_ScriptFunction(
+				global_instance->at("__ari").m_Object,
+				self,
+				result,
+				1,
+				{ &health_penalty }
+			);
+
+			delete health_penalty;
+			hunger_stamina_health_penatly = 0;
+		}
+
+		use_health_instead_of_stamina = false;
+		is_tracked_time_interval = false;
 	}
 
+	// Get Ari maximum health.
+	CScript* gml_script_modify_health = nullptr;
+	g_ModuleInterface->GetNamedRoutinePointer(
+		"gml_Script_get_max_health@Ari@Ari",
+		(PVOID*)&gml_script_modify_health
+	);
+
+	RValue ari_max_health;
+	gml_script_modify_health->m_Functions->m_ScriptFunction(
+		global_instance->at("__ari").m_Object,
+		self,
+		ari_max_health,
+		0,
+		nullptr
+	);
+
+	// Get Ari current health.
+	CScript* gml_script_get_health = nullptr;
+	g_ModuleInterface->GetNamedRoutinePointer(
+		"gml_Script_get_health@Ari@Ari",
+		(PVOID*)&gml_script_get_health
+	);
+
+	RValue ari_current_health;
+	gml_script_get_health->m_Functions->m_ScriptFunction(
+		global_instance->at("__ari").m_Object,
+		self,
+		ari_current_health,
+		0,
+		nullptr
+	);
+
+	// Flag when the health bar is visible.
+	if (ari_current_health.m_Real < ari_max_health.m_Real) {
+		health_bar_visible = true;
+	}
 }
 
 RValue& GmlScriptGetMinutesCallback(
@@ -311,19 +351,23 @@ RValue& GmlScriptGetMinutesCallback(
 {
 	const PFUNC_YYGMLScript original = reinterpret_cast<PFUNC_YYGMLScript>(MmGetHookTrampoline(g_ArSelfModule, "gml_Script_get_minutes"));
 
+	// Set the most recent tick to 6AM on file load.
 	if (game_is_active && time_of_last_tick == 0) {
-		time_of_last_tick = 21600;
+		time_of_last_tick = SIX_AM_IN_SECONDS;
 	}
 
-	if (Arguments[0]->m_i64 % 1800 == 0 && !is_tracked_time_interval && (Arguments[0]->m_i64 - time_of_last_tick) >= 1800) {
+	// If the current time tick is a 30m interval.
+	if (Arguments[0]->m_i64 % THIRY_MINUTES_IN_SECONDS == 0 && !is_tracked_time_interval && (Arguments[0]->m_i64 - time_of_last_tick) >= THIRY_MINUTES_IN_SECONDS) {
 		is_tracked_time_interval = true;
-		time_of_last_tick = Arguments[0]->m_i64 + 0;
+		time_of_last_tick = Arguments[0]->m_i64;
+		
+		ari_hunger_value += HUNGER_LOST_PER_TICK;
 		if (ari_hunger_value > 0) {
-			ari_hunger_value -= 5;
 			ari_is_hungry = false;
 		}
 		else {
 			ari_is_hungry = true;
+			ari_hunger_value = 0;
 		}
 	}
 
@@ -364,33 +408,29 @@ RValue& GmlScriptModifyStaminaCallback(
 			{ &item_id }
 		);
 
-		//g_ModuleInterface->Print(CM_YELLOW, "ItemIdToString: %d => %s", item_id, item_id_as_string.AsString().data());
-
 		if (item_name_to_stars_map.count(item_id_as_string.AsString().data()) > 0)
 		{
-			ari_hunger_value += 2 * item_name_to_stars_map[item_id_as_string.AsString().data()]; // TODO: Testing 2x multiplier for balancing.
+			ari_hunger_value += 2 * item_name_to_stars_map[item_id_as_string.AsString().data()]; // Testing 2x multiplier for balancing.
 			if (ari_hunger_value > 100) {
 				ari_hunger_value = 100;
 			}
 			g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Increased hunger meter by %d!", item_name_to_stars_map[item_id_as_string.AsString().data()]);
 		}
 		else {
-			ari_hunger_value -= Arguments[0]->m_Real;
+			ari_hunger_value += 2 * Arguments[0]->m_Real; // Testing 2x multiplier for balancing.
+
 			g_ModuleInterface->Print(CM_LIGHTYELLOW, "[DontStarve] - Item not in hunger lookup dictionary: (%d) %s", item_id, item_id_as_string.AsString().data());
 			g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Increased hunger meter by %d!", static_cast<int>(Arguments[0]->m_Real));
-
 		}
 
 		delete item_id;
 	}
 	else {
-		//g_ModuleInterface->Print(CM_LIGHTYELLOW, "[DontStarve] - Stamina cost was: %d", static_cast<int>(Arguments[0]->m_Real));
 		int temp = ari_hunger_value += Arguments[0]->m_Real;
 		if (temp < 0) {
 			use_health_instead_of_stamina = true;
-			hunger_stamina_health_penatly = abs(temp);
+			hunger_stamina_health_penatly += temp;
 			ari_hunger_value = 0;
-			g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Hunger meter depleted! Decreased health by %d!", hunger_stamina_health_penatly);
 		}
 		else {
 			ari_hunger_value += Arguments[0]->m_Real;
@@ -429,8 +469,21 @@ RValue& GmlScriptOnDrawGuiCallback(
 		Arguments
 	);
 
+	// Don't let hunger meter fall below 0.
+	if (ari_hunger_value < 0)
+	{
+		ari_hunger_value = 0;
+	}
+
+	// If we should be drawing the HUD.
 	if (game_is_active && !GameIsPaused())
 	{
+		int y_health_bar_offset = 0;
+		if (health_bar_visible)
+		{
+			y_health_bar_offset = 50;
+		}
+
 		// Hunger Bar Icon
 		RValue hunger_bar_icon_sprite_index = g_ModuleInterface->CallBuiltin(
 			"asset_get_index", {
@@ -440,7 +493,7 @@ RValue& GmlScriptOnDrawGuiCallback(
 
 		g_ModuleInterface->CallBuiltin(
 			"draw_sprite", {
-				hunger_bar_icon_sprite_index, 1, 10, 125 // Image is 32,32
+				hunger_bar_icon_sprite_index, 1, 10, (122 + y_health_bar_offset)
 			}
 		);
 
@@ -452,16 +505,16 @@ RValue& GmlScriptOnDrawGuiCallback(
 		);
 
 		int x1 = 50 + 9;
-		int y1 = 115 + 5;
+		int y1 = 115 + 5 + y_health_bar_offset;
 		int x2 = x1 + ari_hunger_value * 2;
-		int y2 = 115 + 40;
+		int y2 = 115 + 40 + y_health_bar_offset;
 		g_ModuleInterface->CallBuiltin(
 			"draw_rectangle", {
 				x1, y1, x2, y2, false
 			}
 		);
 
-		g_ModuleInterface->Print(CM_AQUA, "[DontStarve] - Orange Rectangle Coordinates: %d, %d, %d, %d", x1, y1, x2, y2);
+		//g_ModuleInterface->Print(CM_AQUA, "[DontStarve] - Orange Rectangle Coordinates: %d, %d, %d, %d", x1, y1, x2, y2);
 
 		// Hunger Bar (Black)
 		g_ModuleInterface->CallBuiltin(
@@ -471,16 +524,16 @@ RValue& GmlScriptOnDrawGuiCallback(
 		);
 
 		int _x1 = x2 + 1;
-		int _y1 = 115 + 5;
+		int _y1 = 115 + 5 + y_health_bar_offset;
 		int _x2 = _x1 + ((100 - ari_hunger_value) * 2);
-		int _y2 = 115 + 40;
+		int _y2 = 115 + 40 + y_health_bar_offset;
 		g_ModuleInterface->CallBuiltin(
 			"draw_rectangle", {
 				_x1, _y1, _x2, _y2, false
 			}
 		);
 
-		g_ModuleInterface->Print(CM_AQUA, "[DontStarve] - Black Rectangle Coordinates: %d, %d, %d, %d", _x1, _y1, _x2, _y2);
+		//g_ModuleInterface->Print(CM_AQUA, "[DontStarve] - Black Rectangle Coordinates: %d, %d, %d, %d", _x1, _y1, _x2, _y2);
 
 		// Hunger Bar (Border)
 		RValue hunger_bar_sprite_index = g_ModuleInterface->CallBuiltin(
@@ -491,7 +544,7 @@ RValue& GmlScriptOnDrawGuiCallback(
 
 		g_ModuleInterface->CallBuiltin(
 			"draw_sprite", {
-				hunger_bar_sprite_index, 1, 50, 115
+				hunger_bar_sprite_index, 1, 50, (115 + y_health_bar_offset)
 			}
 		);
 
@@ -504,13 +557,13 @@ RValue& GmlScriptOnDrawGuiCallback(
 		g_ModuleInterface->CallBuiltin(
 			"draw_set_font",
 			{
-				1
+				8 //font
 			}
 		);
 
 		g_ModuleInterface->CallBuiltin(
 			"draw_text_transformed", {
-				50 + 90, 115, std::to_string(ari_hunger_value) + "%", 3, 3, 0 // "Nutrition Level: " + std::to_string(hunger) + "%"
+				140, (118 + y_health_bar_offset), std::to_string(ari_hunger_value) + "%", 3, 3, 0
 			}
 		);
 	}
@@ -617,7 +670,7 @@ RValue& GmlScriptSetTimeCallback(
 	return Result;
 }
 
-RValue& TestHookCallback(
+RValue& GmlScriptEndDayCallback(
 	IN CInstance* Self,
 	IN CInstance* Other,
 	OUT RValue& Result,
@@ -625,10 +678,9 @@ RValue& TestHookCallback(
 	IN RValue** Arguments
 )
 {
-	// end of day testing: gml_Script_end_day
 	time_of_last_tick = 0;
 
-	const PFUNC_YYGMLScript original = reinterpret_cast<PFUNC_YYGMLScript>(MmGetHookTrampoline(g_ArSelfModule, "TestHook"));
+	const PFUNC_YYGMLScript original = reinterpret_cast<PFUNC_YYGMLScript>(MmGetHookTrampoline(g_ArSelfModule, "gml_Script_end_day"));
 	original(
 		Self,
 		Other,
@@ -833,30 +885,30 @@ void CreateHookGmlScriptSetTime(AurieStatus& status)
 	}
 }
 
-void CreateTestHook(AurieStatus& status, const char* script_name)
+void CreateHookGmlScriptEndDay(AurieStatus& status)
 {
 	CScript* gml_script = nullptr;
 	status = g_ModuleInterface->GetNamedRoutinePointer(
-		script_name,
+		"gml_Script_end_day",
 		(PVOID*)&gml_script
 	);
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Failed to get script (%s)!", script_name);
+		g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Failed to get script (gml_Script_end_day)!");
 	}
 
 	status = MmCreateHook(
 		g_ArSelfModule,
-		"TestHook",
+		"gml_Script_end_day",
 		gml_script->m_Functions->m_ScriptFunction,
-		TestHookCallback,
+		GmlScriptEndDayCallback,
 		nullptr
 	);
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Failed to hook script (%s)!", script_name);
+		g_ModuleInterface->Print(CM_LIGHTGREEN, "[DontStarve] - Failed to hook script (gml_Script_end_day)!");
 	}
 }
 
@@ -867,7 +919,6 @@ EXPORTED AurieStatus ModuleInitialize(
 {
 	UNREFERENCED_PARAMETER(ModulePath);
 
-	// Obtain the YYTK interface.
 	AurieStatus status = AURIE_SUCCESS;
 
 	status = ObGetInterface(
@@ -942,7 +993,7 @@ EXPORTED AurieStatus ModuleInitialize(
 		return status;
 	}
 
-	CreateTestHook(status, "gml_Script_end_day");
+	CreateHookGmlScriptEndDay(status);
 	if (!AurieSuccess(status))
 	{
 		g_ModuleInterface->Print(CM_LIGHTRED, "[DontStarve] - Exiting due to failure on start!");
