@@ -8,9 +8,10 @@ static const int SIX_AM_IN_SECONDS = 21600;
 static const int THIRY_MINUTES_IN_SECONDS = 1800;
 static const int HUNGER_LOST_PER_TICK = -1;
 static const int HEALTH_LOST_PER_TICK = -10;
+static const int STARTING_HUNGER_VALUE = 100;
 
 static YYTKInterface* g_ModuleInterface = nullptr;
-static int ari_hunger_value = 5;
+static int ari_hunger_value = STARTING_HUNGER_VALUE;
 static bool ari_is_hungry = false;
 static bool is_tracked_time_interval = false;
 static int time_of_last_tick = 0; // TODO: Set this on file load.
@@ -609,7 +610,7 @@ RValue& GmlScriptSetupMainScreenCallback(
 {
 	game_is_active = false;
 	time_of_last_tick = 0;
-	ari_hunger_value = 5;
+	ari_hunger_value = STARTING_HUNGER_VALUE;
 
 	const PFUNC_YYGMLScript original = reinterpret_cast<PFUNC_YYGMLScript>(MmGetHookTrampoline(g_ArSelfModule, "gml_Script_setup_main_screen@TitleMenu@TitleMenu"));
 	original(
