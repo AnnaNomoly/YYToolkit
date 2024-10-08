@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZoomControl", "ZoomControl\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WorkHard", "WorkHard\WorkHard.vcxproj", "{88325F8A-DE67-4703-92F5-96DD96DB1443}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SaveAnywhere", "SaveAnywhere\SaveAnywhere.vcxproj", "{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -91,6 +93,14 @@ Global
 		{88325F8A-DE67-4703-92F5-96DD96DB1443}.Release|x64.Build.0 = Release|x64
 		{88325F8A-DE67-4703-92F5-96DD96DB1443}.Release|x86.ActiveCfg = Release|Win32
 		{88325F8A-DE67-4703-92F5-96DD96DB1443}.Release|x86.Build.0 = Release|Win32
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Debug|x64.ActiveCfg = Debug|x64
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Debug|x64.Build.0 = Debug|x64
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Debug|x86.ActiveCfg = Debug|Win32
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Debug|x86.Build.0 = Debug|Win32
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Release|x64.ActiveCfg = Release|x64
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Release|x64.Build.0 = Release|x64
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Release|x86.ActiveCfg = Release|Win32
+		{740B0F12-DFBB-48A7-A69A-CB7D6C43FB9F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
