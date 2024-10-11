@@ -9,8 +9,9 @@ A YYTK plugin for FieldsOfMistria that allows you to modify what **item** Ari wi
 2. Dig up an artifact spot! The item uncovered will be what you input. Any subsequent artifact spots will behave as normal until you repeat step #1.
 
 ## Item Table (FoM v0.11.7)
-| Item ID | Item Name |
-| --------| --------- |
+Anything marked **DISABLED** is not supported, as it would crash the game when trying to create the item.
+| Item ID | Item Name | Notes |
+| --------| --------- | ----- |
 | 0 | acorn |
 | 1 | adept_kitchen |
 | 2 | alda_bronze_sword |
@@ -688,7 +689,7 @@ A YYTK plugin for FieldsOfMistria that allows you to modify what **item** Ari wi
 | 1014 | rainbow_trout |
 | 1015 | razorback |
 | 1016 | really_round_rock |
-| 1017 | recipe_scroll |
+| 1017 | recipe_scroll | **DISABLED** |
 | 1018 | red_snapper |
 | 1019 | red_snapper_sushi |
 | 1020 | red_toadstool |

@@ -688,7 +688,7 @@ static std::map<std::string, int> item_name_to_id_map = {
 	{ "rainbow_trout", 1014 },
 	{ "razorback", 1015 },
 	{ "really_round_rock", 1016 },
-	{ "recipe_scroll", 1017 },
+	//{ "recipe_scroll", 1017 },
 	{ "red_snapper", 1018 },
 	{ "red_snapper_sushi", 1019 },
 	{ "red_toadstool", 1020 },
@@ -1089,7 +1089,7 @@ RValue& GmlScriptHeldItemCallback(
 			{
 				"Input the desired item's internal name.\r\n"
 				"(Ex.: rosehip_jam)\r\n"
-				"Minimum = 0%, Maximum = 500%",
+				"More Info: https://github.com/AnnaNomoly/YYToolkit/tree/stable/DigUpAnything",
 				"rosehip_jam"
 			}
 		);
