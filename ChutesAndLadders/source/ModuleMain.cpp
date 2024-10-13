@@ -3,7 +3,6 @@ using namespace Aurie;
 using namespace YYTK;
 
 static YYTKInterface* g_ModuleInterface = nullptr;
-//static bool room_loaded = false;
 
 RValue& GmlScriptTryLocationIdToStringCallback(
 	IN CInstance* Self,
@@ -27,9 +26,9 @@ RValue& GmlScriptTryLocationIdToStringCallback(
 		std::string location = Result.AsString().data();
 		if (location == "dungeon")
 		{
-			for (int i = 0; i < 100; i++)
+			for (int i = 0; i < 40; i++)
 			{
-				for (int j = 0; i < 100; j++)
+				for (int j = 0; j < 40; j++)
 				{
 					try
 					{
@@ -54,95 +53,45 @@ RValue& GmlScriptTryLocationIdToStringCallback(
 						);
 
 						g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Spawned ladder at (%d, %d)!", i, j);
-						i = INT_MAX - 1;
-						j = INT_MAX - 1;
+						return Result;
 					}
 					catch (...) {}
 				}
 			}
-
-
+			g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Found no suitable position for a ladder!");
 		}
 	}
 	
 	return Result;
 }
 
-//RValue& GmlScriptShowRoomTitleCallback(
-//	IN CInstance* Self,
-//	IN CInstance* Other,
-//	OUT RValue& Result,
-//	IN int ArgumentCount,
-//	IN RValue** Arguments
-//)
-//{
-//	room_loaded = true;
-//
-//	const PFUNC_YYGMLScript original = reinterpret_cast<PFUNC_YYGMLScript>(MmGetHookTrampoline(g_ArSelfModule, "gml_Script_show_room_title"));
-//	original(
-//		Self,
-//		Other,
-//		Result,
-//		ArgumentCount,
-//		Arguments
-//	);
-//
-//	return Result;
-//}
+RValue& GmlScriptPanicCallback(
+	IN CInstance* Self,
+	IN CInstance* Other,
+	OUT RValue& Result,
+	IN int ArgumentCount,
+	IN RValue** Arguments
+)
+{
+	std::string error = Arguments[0]->AsString().data();
+	if (error == "Failed to spawn a ladder in the dungeon!")
+	{
+		return Result;
+	}
+	else
+	{
+		const PFUNC_YYGMLScript original = reinterpret_cast<PFUNC_YYGMLScript>(MmGetHookTrampoline(g_ArSelfModule, "gml_Script_error"));
+		original(
+			Self,
+			Other,
+			Result,
+			ArgumentCount,
+			Arguments
+		);
 
-//void CreateHookGmlScriptSpawnLadder(AurieStatus& status)
-//{
-//	CScript* gml_Script_spawn_ladder = nullptr;
-//	status = g_ModuleInterface->GetNamedRoutinePointer(
-//		"gml_Script_try_open@gml_Object_par_ladder_Create_0",
-//		(PVOID*)&gml_Script_spawn_ladder
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Failed to get script (gml_Script_spawn_ladder@DungeonRunner@DungeonRunner)!");
-//	}
-//
-//	status = MmCreateHook(
-//		g_ArSelfModule,
-//		"gml_Script_try_open@gml_Object_par_ladder_Create_0",
-//		gml_Script_spawn_ladder->m_Functions->m_ScriptFunction,
-//		GmlScriptSpawnLadderCallback,
-//		nullptr
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Failed to hook script (gml_Script_spawn_ladder@DungeonRunner@DungeonRunner)!");
-//	}
-//}
-
-//void CreateHookGmlScriptWriteRockToLocation(AurieStatus& status)
-//{
-//	CScript* gml_Script_write_rock_to_location = nullptr;
-//	status = g_ModuleInterface->GetNamedRoutinePointer(
-//		"gml_Script_write_rock_to_location",
-//		(PVOID*)&gml_Script_write_rock_to_location
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Failed to get script (gml_Script_write_rock_to_location)!");
-//	}
-//
-//	status = MmCreateHook(
-//		g_ArSelfModule,
-//		"gml_Script_write_rock_to_location",
-//		gml_Script_write_rock_to_location->m_Functions->m_ScriptFunction,
-//		GmlScriptWriteRockToLocationCallback,
-//		nullptr
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Failed to hook script (gml_Script_write_rock_to_location)!");
-//	}
-//}
+		return Result;
+	}
+}
 
 void CreateHookGmlScriptTryLocationIdToString(AurieStatus& status)
 {
@@ -154,7 +103,7 @@ void CreateHookGmlScriptTryLocationIdToString(AurieStatus& status)
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Failed to get script (gml_Script_try_location_id_to_string)!");
+		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to get script (gml_Script_try_location_id_to_string)!");
 	}
 
 	status = MmCreateHook(
@@ -167,63 +116,38 @@ void CreateHookGmlScriptTryLocationIdToString(AurieStatus& status)
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Failed to hook script (gml_Script_try_location_id_to_string)!");
+		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to hook script (gml_Script_try_location_id_to_string)!");
 	}
 }
 
-//void CreateHookGmlScriptLoadGame(AurieStatus& status)
-//{
-//	CScript* gml_script_load_game = nullptr;
-//	status = g_ModuleInterface->GetNamedRoutinePointer(
-//		"gml_Script_load_game",
-//		(PVOID*)&gml_script_load_game
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Failed to get script (gml_Script_load_game)!");
-//	}
-//
-//	status = MmCreateHook(
-//		g_ArSelfModule,
-//		"gml_Script_load_game",
-//		gml_script_load_game->m_Functions->m_ScriptFunction,
-//		GmlScriptLoadGameCallback,
-//		nullptr
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTGREEN, "[SaveAnywhere] - Failed to hook script (gml_Script_load_game)!");
-//	}
-//}
+void CreateHookGmlScriptPanic(AurieStatus& status)
+{
+	CScript* gml_script_load_game = nullptr;
+	status = g_ModuleInterface->GetNamedRoutinePointer(
+		"gml_Script_error",
+		(PVOID*)&gml_script_load_game
+	);
 
-//void CreateHookGmlScriptShowRoomTitle(AurieStatus& status)
-//{
-//	CScript* gml_script_modify_stamina = nullptr;
-//	status = g_ModuleInterface->GetNamedRoutinePointer(
-//		"gml_Script_show_room_title",
-//		(PVOID*)&gml_script_modify_stamina
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to get script (gml_Script_show_room_title)!");
-//	}
-//
-//	status = MmCreateHook(
-//		g_ArSelfModule,
-//		"gml_Script_show_room_title",
-//		gml_script_modify_stamina->m_Functions->m_ScriptFunction,
-//		GmlScriptShowRoomTitleCallback,
-//		nullptr
-//	);
-//
-//	if (!AurieSuccess(status))
-//	{
-//		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to hook script (gml_Script_show_room_title)!");
-//	}
-//}
+	if (!AurieSuccess(status))
+	{
+		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to get script (gml_Script___panic)!");
+	}
+
+	status = MmCreateHook(
+		g_ArSelfModule,
+		"gml_Script_error",
+		gml_script_load_game->m_Functions->m_ScriptFunction,
+		GmlScriptPanicCallback,
+		nullptr
+	);
+
+	if (!AurieSuccess(status))
+	{
+		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to hook script (gml_Script___panic)!");
+	}
+}
+
+
 
 EXPORTED AurieStatus ModuleInitialize(IN AurieModule* Module, IN const fs::path& ModulePath) {
 	UNREFERENCED_PARAMETER(ModulePath);
@@ -240,20 +164,6 @@ EXPORTED AurieStatus ModuleInitialize(IN AurieModule* Module, IN const fs::path&
 
 	g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Plugin starting...");
 	
-	//CreateHookGmlScriptSpawnLadder(status);
-	//if (!AurieSuccess(status))
-	//{
-	//	g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Exiting due to failure on start!");
-	//	return status;
-	//}
-
-	//CreateHookGmlScriptWriteRockToLocation(status);
-	//if (!AurieSuccess(status))
-	//{
-	//	g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Exiting due to failure on start!");
-	//	return status;
-	//}
-
 	CreateHookGmlScriptTryLocationIdToString(status);
 	if (!AurieSuccess(status))
 	{
@@ -261,21 +171,13 @@ EXPORTED AurieStatus ModuleInitialize(IN AurieModule* Module, IN const fs::path&
 		return status;
 	}
 
-	//CreateHookGmlScriptLoadGame(status);
-	//if (!AurieSuccess(status))
-	//{
-	//	g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Exiting due to failure on start!");
-	//	return status;
-	//}
+	CreateHookGmlScriptPanic(status);
+	if (!AurieSuccess(status))
+	{
+		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Exiting due to failure on start!");
+		return status;
+	}
 
-	//CreateHookGmlScriptShowRoomTitle(status);
-	//if (!AurieSuccess(status))
-	//{
-	//	g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Exiting due to failure on start!");
-	//	return status;
-	//}
-
-	// gml_Script_try_location_id_to_string
 	g_ModuleInterface->Print(CM_LIGHTGREEN, "[ChutesAndLadders] - Plugin started!");
 	return AURIE_SUCCESS;
 }
