@@ -65,7 +65,7 @@ RValue& GmlScriptTryLocationIdToStringCallback(
 	return Result;
 }
 
-RValue& GmlScriptPanicCallback(
+RValue& GmlScriptErrorCallback(
 	IN CInstance* Self,
 	IN CInstance* Other,
 	OUT RValue& Result,
@@ -120,7 +120,7 @@ void CreateHookGmlScriptTryLocationIdToString(AurieStatus& status)
 	}
 }
 
-void CreateHookGmlScriptPanic(AurieStatus& status)
+void CreateHookGmlScriptError(AurieStatus& status)
 {
 	CScript* gml_script_load_game = nullptr;
 	status = g_ModuleInterface->GetNamedRoutinePointer(
@@ -130,24 +130,22 @@ void CreateHookGmlScriptPanic(AurieStatus& status)
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to get script (gml_Script___panic)!");
+		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to get script (gml_Script_error)!");
 	}
 
 	status = MmCreateHook(
 		g_ArSelfModule,
 		"gml_Script_error",
 		gml_script_load_game->m_Functions->m_ScriptFunction,
-		GmlScriptPanicCallback,
+		GmlScriptErrorCallback,
 		nullptr
 	);
 
 	if (!AurieSuccess(status))
 	{
-		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to hook script (gml_Script___panic)!");
+		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Failed to hook script (gml_Script_error)!");
 	}
 }
-
-
 
 EXPORTED AurieStatus ModuleInitialize(IN AurieModule* Module, IN const fs::path& ModulePath) {
 	UNREFERENCED_PARAMETER(ModulePath);
@@ -171,7 +169,7 @@ EXPORTED AurieStatus ModuleInitialize(IN AurieModule* Module, IN const fs::path&
 		return status;
 	}
 
-	CreateHookGmlScriptPanic(status);
+	CreateHookGmlScriptError(status);
 	if (!AurieSuccess(status))
 	{
 		g_ModuleInterface->Print(CM_LIGHTRED, "[ChutesAndLadders] - Exiting due to failure on start!");
