@@ -971,7 +971,7 @@ Anything marked **DISABLED** is not supported, as it would crash the game when t
 | 1357 | ultimate_hay |
 | 1358 | ultimate_small_animal_feed |
 | 1359 | underseaweed |
-| 1360 | unidentified_artifact |
+| 1360 | unidentified_artifact | **DISABLED** |
 | 1361 | unknown_dragon_statuette |
 | 1362 | unusual_seed |
 | 1363 | upper_mines_mushroom |

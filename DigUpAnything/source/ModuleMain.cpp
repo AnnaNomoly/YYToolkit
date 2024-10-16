@@ -970,7 +970,7 @@ static std::map<std::string, int> item_name_to_id_map = {
 	{ "ultimate_hay", 1357 },
 	{ "ultimate_small_animal_feed", 1358 },
 	{ "underseaweed", 1359 },
-	{ "unidentified_artifact", 1360 },
+	//{ "unidentified_artifact", 1360 },
 	{ "unknown_dragon_statuette", 1361 },
 	{ "unusual_seed", 1362 },
 	{ "upper_mines_mushroom", 1363 },
